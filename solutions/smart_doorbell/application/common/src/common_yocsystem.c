@@ -71,6 +71,7 @@ extern void cli_reg_cmd_ps(void);
 extern void cli_reg_cmd_iperf(void);
 extern void cli_reg_cmd_ls(void);
 extern void cli_reg_cmd_adb_config(void);
+extern void cli_reg_cmd_free(void);
 
 #if (CONFIG_EXT4VFS_SUPPORT == 1)
 extern void cli_reg_cmd_rm(void);
@@ -88,6 +89,7 @@ void YOC_SYSTEM_ToolInit()
     aos_cli_init();
     debug_cli_cmd_init();
     cli_reg_cmd_ps();
+    cli_reg_cmd_free();
     cli_reg_cmd_ls();
 #if (CONFIG_EXT4VFS_SUPPORT == 1)
     cli_reg_cmd_rm();

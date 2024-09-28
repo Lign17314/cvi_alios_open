@@ -88,3 +88,4 @@ solutions/**/pqtool_definition.json
 solutions/**/.sconsign.dblite
 .yoc
 install
+host-tools/Xuantie-900-gcc-elf-newlib-x86_64-V2.6.1

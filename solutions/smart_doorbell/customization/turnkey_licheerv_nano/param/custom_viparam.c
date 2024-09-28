@@ -15,10 +15,13 @@ extern unsigned int cvi_ir_pq_param_length;
 PARAM_CLASSDEFINE(PARAM_SNS_CFG_S,SENSORCFG,CTX,Sensor)[] = {
     {
         .enSnsType = CONFIG_SNS0_TYPE,
-        .s32I2cAddr = -1,
-        .s8I2cDev = 2,
-        .u32Rst_port_idx = 2,//GPIOC_13
-        .u32Rst_pin = 13,
+        .s32I2cAddr = 0x29,
+        .s8I2cDev = 4,
+        .bSetDevAttrMipi = 1,
+        .u32Rst_port_idx = 4,//PWR_GPIO1
+        .u32Rst_pin = 1,
+        .as16LaneId = {2, 1, 0, -1, -1},
+		.as8PNSwap = {0, 0, 0, 0, 0},
         .u32Rst_pol = OF_GPIO_ACTIVE_LOW,
         .bSetDevAttr = 1,
         .u8MclkCam = 1,
@@ -90,7 +93,7 @@ static PARAM_DEV_CFG_S VIDEVCFG_CTX_VI[] = {
 };
 
 PARAM_VI_CFG_S g_stViCtx = {
-    .u32WorkSnsCnt = 2,
+    .u32WorkSnsCnt = 1,
     .pstSensorCfg = PARAM_CLASS(SENSORCFG,CTX,Sensor),
     .pstIspCfg = PARAM_CLASS(ISPCFG,CTX,ISP),
     .pstDevInfo = PARAM_CLASS(VIDEVCFG,CTX,VI)

@@ -34,26 +34,17 @@ static void _GPIOSetValue(u8 gpio_grp, u8 gpio_num, u8 level)
 
 static void _SensorPinmux()
 {
-#if (CONFIG_QFN_PANEL_REWORK == 1)
-	//改板
-    PINMUX_CONFIG(SD1_D3, PWR_GPIO_18);
-    PINMUX_CONFIG(SD1_D2, CAM_MCLK0);
-    PINMUX_CONFIG(PWR_GPIO1, IIC2_SCL); // I2C 2
-    PINMUX_CONFIG(PWR_GPIO2, IIC2_SDA);
-#else
-    // Sensor Pinmux
-    PINMUX_CONFIG(PAD_MIPI_TXP1, IIC2_SCL);
-    PINMUX_CONFIG(PAD_MIPI_TXM1, IIC2_SDA);
-    PINMUX_CONFIG(PAD_MIPI_TXP0, XGPIOC_13);
-    PINMUX_CONFIG(PAD_MIPI_TXM0, CAM_MCLK1);
-#endif
+	PINMUX_CONFIG(PWR_WAKEUP0, IIC4_SCL);
+	PINMUX_CONFIG(PWR_BUTTON1, IIC4_SDA);
+	PINMUX_CONFIG(PAD_MIPIRX4N, CAM_MCLK0); // IR DATA LANE
+	PINMUX_CONFIG(PWR_GPIO1, PWR_GPIO_1);
 }
 
 static void _MipiRxPinmux(void)
 {
 //mipi rx pinmux
-    PINMUX_CONFIG(PAD_MIPIRX4P, XGPIOC_3);
-    PINMUX_CONFIG(PAD_MIPIRX4N, XGPIOC_2);
+    // PINMUX_CONFIG(PAD_MIPIRX4P, XGPIOC_3);
+    // PINMUX_CONFIG(PAD_MIPIRX4N, XGPIOC_2);
 }
 
 static void _MipiTxPinmux(void)
@@ -122,6 +113,11 @@ void PLATFORM_IoInit(void)
     _MipiRxPinmux();
     _MipiTxPinmux();
     _SensorPinmux();
+	PLATFORM_PanelBacklightCtl(30);
+	PINMUX_CONFIG(PWR_GPIO0, PWR_GPIO_0);
+	_GPIOSetValue(4,0,0);
+	udelay(1000);
+	_GPIOSetValue(4,0,1);
 }
 
 void PLATFORM_PowerOff(void)
@@ -133,12 +129,42 @@ int PLATFORM_PanelInit(void)
 {
     return CVI_SUCCESS;
 }
-
+#if 0
 void PLATFORM_PanelBacklightCtl(int level)
 {
-
+    PINMUX_CONFIG(PWM0_BUCK, XGPIOB_0);
+    if(level > 0) {
+        _GPIOSetValue(1,0,1);
+    } else {
+        _GPIOSetValue(1,0,0);
+    }
 }
-
+#else
+#include <drv/pwm.h>
+void PLATFORM_PanelBacklightCtl(int duty)
+{
+	PINMUX_CONFIG(PWM0_BUCK, PWM_0);
+    if(duty < 0) {
+        return;
+    }
+    csi_pwm_t pwm;
+    if(csi_pwm_init(&pwm, 0) == 0 ){
+        csi_pwm_out_stop(&pwm, 0);
+        if(duty != 0) {
+            //printf("PLATFORM_IrCutCtl duty %d \n",duty);
+            csi_pwm_out_config(&pwm, 0, 10000, duty / 100 * 10000, PWM_POLARITY_HIGH);
+            csi_pwm_out_start(&pwm, 0);
+			return;
+        } else {
+            return;
+        }
+    } else {
+        printf("csi_pwm_init err \n");
+        return;
+    }
+    return;
+}
+#endif
 
 void PLATFORM_SpkMute(int value)
 {

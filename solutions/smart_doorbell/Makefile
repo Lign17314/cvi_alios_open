@@ -27,11 +27,12 @@ all:
 	@cp yoc.bin $(MK_GENERATED_IMGS_PATH)/data/prim
 ifeq ($(YOC_COMPRESS),y)
 	@echo YoC Compress start
-	$(CPRE) lz4 -f yoc.bin
-	$(CPRE) if [ ! -d $(CURDIR)/lz4_out ]; then  mkdir lz4_out; fi
-	$(CPRE) if [ -e $(CURDIR)/lz4_out/yoc.bin ]; then rm -rf $(CURDIR)/lz4_out/yoc.bin; fi
-	$(CPRE) if [ -e $(CURDIR)/yoc.bin.lz4 ]; then echo ULZ4`stat -c "%s" $(CURDIR)/yoc.bin.lz4`  >> $(CURDIR)/lz4_out/yoc.bin; fi
-	$(CPRE) if [ -e $(CURDIR)/lz4_out/yoc.bin ]; then cat  $(CURDIR)/yoc.bin.lz4 >> $(CURDIR)/lz4_out/yoc.bin; fi
+	$(CPRE) ./script/fsbl_test/fiptool.py -v genfip 'fip.bin' --MONITOR_RUNADDR="0x80040000" --CHIP_CONF='script/fsbl_test/chip_conf.bin' --NOR_INFO='FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' --NAND_INFO='00000000' --BL2='script/fsbl_test/bl2.bin' --BLCP_IMG_RUNADDR=0x05200200 --BLCP_PARAM_LOADADDR=0 --BLCP=script/fsbl_test/empty.bin --DDR_PARAM='script/fsbl_test/ddr_param.bin' --MONITOR=yoc.bin --compress='lzma'
+	$(CPRE) lzma -f yoc.bin
+	$(CPRE) if [ ! -d $(CURDIR)/lzma_out ]; then  mkdir lzma_out; fi
+	$(CPRE) if [ -e $(CURDIR)/lzma_out/yoc.bin ]; then rm -rf $(CURDIR)/lzma_out/yoc.bin; fi
+	$(CPRE) if [ -e $(CURDIR)/yoc.bin.lzma ]; then echo ULZ4`stat -c "%s" $(CURDIR)/yoc.bin.lzma`  >> $(CURDIR)/lzma_out/yoc.bin; fi
+	$(CPRE) if [ -e $(CURDIR)/lzma_out/yoc.bin ]; then cat  $(CURDIR)/yoc.bin.lzma >> $(CURDIR)/lzma_out/yoc.bin; fi
 	@echo YoC Compress done
 endif
 	@echo YoC SDK Done

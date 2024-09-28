@@ -50,11 +50,7 @@ PARAM_CLASSDEFINE(PARAM_VODEV_S,VOCFG,CTX,VO)[] = {
 };
 
 PARAM_VO_CFG_S g_stVoCtx = {
-#if (CONFIG_QFN_PANEL_REWORK == 1)
-    .u8VoCnt = 1,
-#else
     .u8VoCnt = 0,
-#endif
     .pstVoCfg = PARAM_CLASS(VOCFG,CTX,VO),
     .pstPanelTxCfg = NULL,
 };

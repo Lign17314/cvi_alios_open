@@ -1,0 +1,1 @@
+make smart_doorbell PROJECT=turnkey_licheerv_nano YOC_COMPRESS=y
