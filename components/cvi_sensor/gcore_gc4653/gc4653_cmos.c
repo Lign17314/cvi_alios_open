@@ -41,7 +41,8 @@ ISP_SNS_STATE_S *g_pastGc4653[VI_MAX_PIPE_NUM] = {CVI_NULL};
 #define GC4653_SENSOR_RESET_CTX(dev)         (g_pastGc4653[dev] = CVI_NULL)
 
 ISP_SNS_COMMBUS_U g_aunGc4653_BusInfo[VI_MAX_PIPE_NUM] = {
-	[0] = { .s8I2cDev = 3},
+	// for licheervnano
+	[0] = { .s8I2cDev = 4},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
 };
 

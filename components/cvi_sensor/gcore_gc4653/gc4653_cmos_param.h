@@ -197,21 +197,12 @@ struct combo_dev_attr_s gc4653_rx_attr = {
 	.mac_clk = RX_MAC_CLK_200M,
 	.mipi_attr = {
 		.raw_data_type = RAW_DATA_10BIT,
-#if defined(__CV180X__)
-		.lane_id = {3, 4, 2, -1, -1},
-		.pn_swap = {1, 1, 1, 0, 0},
-#else
-		.lane_id = {3, 2, 4, -1, -1},
+		.lane_id = {2, 1, 0, -1, -1},
 		.pn_swap = {0, 0, 0, 0, 0},
-#endif
 		.wdr_mode = CVI_MIPI_WDR_MODE_NONE,
 	},
 	.mclk = {
-#if defined(__CV180X__)
 		.cam = 0,
-#else
-		.cam = 1,
-#endif
 		.freq = CAMPLL_FREQ_27M,
 	},
 	.devno = 0,
