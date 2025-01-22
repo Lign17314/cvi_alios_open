@@ -152,7 +152,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     ret = aos_queue_send(&s_rndis_msg_queue, &msg, sizeof(rndis_msg_t));
 
     if (ret) {
-        LOGE(TAG, "queue send error");
+        LOGE(TAG, "queue send error, ret %d", ret);
         return ERR_ABRT;
     }
 
@@ -290,7 +290,7 @@ static void rndis_device_start_network()
     aos_task_t task_handle;
 
     aos_queue_new(&s_rndis_msg_queue, s_queue_msg, sizeof(s_queue_msg), sizeof(rndis_msg_t));
-
+    printf("%s,%d\r\n",__func__,__LINE__);
     aos_task_new_ext(&task_handle, "rndis_trx", rndis_task_entry, NULL, 2048, AOS_DEFAULT_APP_PRI);
 }
 
@@ -368,7 +368,6 @@ void rndis_device_lwip_init(void)
     netifapi_netif_set_default(&rndis_device_netif);
 
     netifapi_netif_set_up(&rndis_device_netif);
-    netifapi_netif_set_link_up(&rndis_device_netif);
-
     rndis_device_start_network();
+    netifapi_netif_set_link_up(&rndis_device_netif);
 }
