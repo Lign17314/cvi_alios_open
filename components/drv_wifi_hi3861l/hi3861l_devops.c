@@ -736,3 +736,15 @@ void hi3861_reboot()
         }
     }
 }
+
+int app_hi3861l_get_ipaddr(ip_addr_t *ipaddr, ip_addr_t *netmask, ip_addr_t *gw)
+{
+    struct netif *netif = &hi3861l_netif[0];
+    aos_check_return_einval(netif && ipaddr && netmask && gw);
+
+    ip_addr_copy(*(ip4_addr_t *)ip_2_ip4(ipaddr), *netif_ip_addr4(netif));
+    ip_addr_copy(*(ip4_addr_t *)ip_2_ip4(gw), *netif_ip_gw4(netif));
+    ip_addr_copy(*(ip4_addr_t *)ip_2_ip4(netmask), *netif_ip_netmask4(netif));
+
+    return 0;
+}

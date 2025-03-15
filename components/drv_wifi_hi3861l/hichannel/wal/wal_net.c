@@ -380,13 +380,13 @@ int wal_irq_config(void)
     static csi_gpio_t s_wifi_irqgpio = {0};
     if(gs_init_flag == 0) {
         if(gs_init_flag == 0 ) {
-            PINMUX_CONFIG(PWR_WAKEUP0, PWR_GPIO_6);
-            csi_gpio_init(&s_wifi_irqgpio, 4);
-            csi_gpio_mode(&s_wifi_irqgpio , 1 << 6, GPIO_MODE_PULLUP);
-            csi_gpio_dir(&s_wifi_irqgpio , 1 << 6, GPIO_DIRECTION_INPUT);
-            csi_gpio_irq_mode(&s_wifi_irqgpio, 1 << 6, GPIO_IRQ_MODE_RISING_EDGE);
+            PINMUX_CONFIG(IIC0_SCL,XGPIOA_28);
+            csi_gpio_init(&s_wifi_irqgpio, 0);
+            csi_gpio_mode(&s_wifi_irqgpio , 1 << 28, GPIO_MODE_PULLDOWN);
+            csi_gpio_dir(&s_wifi_irqgpio , 1 << 28, GPIO_DIRECTION_INPUT);
+            csi_gpio_irq_mode(&s_wifi_irqgpio, 1 << 28, GPIO_IRQ_MODE_RISING_EDGE);
             csi_gpio_attach_callback(&s_wifi_irqgpio, wal_irq_sem_rx, NULL);
-            csi_gpio_irq_enable(&s_wifi_irqgpio, 1 << 6, true);
+            csi_gpio_irq_enable(&s_wifi_irqgpio, 1 << 28, true);
         }
     }
     gs_init_flag = 1;

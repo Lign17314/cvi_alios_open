@@ -118,6 +118,8 @@ void PLATFORM_IoInit(void)
 	_GPIOSetValue(4,0,0);
 	udelay(1000);
 	_GPIOSetValue(4,0,1);
+	PINMUX_CONFIG(JTAG_CPU_TMS, XGPIOA_19);
+	_GPIOSetValue(0,19,0);
 }
 
 void PLATFORM_PowerOff(void)

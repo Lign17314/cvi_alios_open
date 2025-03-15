@@ -18,17 +18,17 @@ PARAM_CLASSDEFINE(PARAM_VB_CFG_S,VBPOOL,CTX,VB)[] = {
         .enCmpMode = COMPRESS_MODE_NONE,
     },
     {
-        .u16width = PANEL_WIDTH,
-        .u16height = PANEL_HEIGHT,
+        .u16width = 1920,
+        .u16height = 1080,
         .u8VbBlkCnt = 3,
-        .fmt = PIXEL_FORMAT_NV21,
+        .fmt = PIXEL_FORMAT_RGB_888_PLANAR,
         .enBitWidth = DATA_BITWIDTH_8,
         .enCmpMode = COMPRESS_MODE_NONE,
     },
 };
 
 PARAM_SYS_CFG_S  g_stSysCtx = {
-    .u8VbPoolCnt = 1,
+    .u8VbPoolCnt = 2,
     .u8ViCnt = 2,
     .stVIVPSSMode.aenMode[0] = VI_OFFLINE_VPSS_OFFLINE,
     .stVIVPSSMode.aenMode[1] = VI_OFFLINE_VPSS_OFFLINE,
