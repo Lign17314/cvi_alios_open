@@ -2,7 +2,7 @@
 
 #define MAX_SENSOR_NUM  3
 
-static int g_sns_type[MAX_SENSOR_NUM] = {CONFIG_SNS0_TYPE, CONFIG_SNS1_TYPE, CONFIG_SNS2_TYPE};
+static int g_sns_type[MAX_SENSOR_NUM] = {GCORE_GC4653_MIPI_4M_30FPS_10BIT, CONFIG_SNS1_TYPE, CONFIG_SNS2_TYPE};
 
 typedef struct _SNS_CONFIG_S {
 	SIZE_S			stSize;

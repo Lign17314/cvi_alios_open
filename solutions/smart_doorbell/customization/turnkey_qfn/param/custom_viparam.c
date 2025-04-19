@@ -14,7 +14,7 @@ extern unsigned int cvi_ir_pq_param_length;
 
 PARAM_CLASSDEFINE(PARAM_SNS_CFG_S,SENSORCFG,CTX,Sensor)[] = {
     {
-        .enSnsType = CONFIG_SNS0_TYPE,
+        .enSnsType = GCORE_GC4653_MIPI_4M_30FPS_10BIT,
         .s32I2cAddr = 0x29,
         .s8I2cDev = 4,
         .u32Rst_port_idx = 4,//PWR_GPIO1
