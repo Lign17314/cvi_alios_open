@@ -11,7 +11,7 @@
 #ifndef _RWNX_PLATFORM_H_
 #define _RWNX_PLATFORM_H_
 
-#include <linux/pci.h>
+// #include <linux/pci.h>
 
 #define RWNX_CONFIG_FW_NAME             "rwnx_settings.ini"
 
@@ -64,14 +64,7 @@ enum rwnx_platform_addr {
  */
 struct rwnx_plat {
     struct pci_dev *pci_dev;
-
-#ifdef AICWF_SDIO_SUPPORT
 	struct aic_sdio_dev *sdiodev;
-#endif
-
-#ifdef AICWF_USB_SUPPORT
-    struct aic_usb_dev *usbdev;
-#endif
     bool enabled;
 
     int (*enable)(struct rwnx_hw *rwnx_hw);
@@ -101,11 +94,6 @@ int rwnx_platform_on(struct rwnx_hw *rwnx_hw, void *config);
 void rwnx_platform_off(struct rwnx_hw *rwnx_hw, void **config);
 int rwnx_platform_register_drv(void);
 void rwnx_platform_unregister_drv(void);
-extern struct device *rwnx_platform_get_dev(struct rwnx_plat *rwnx_plat);
-static inline unsigned int rwnx_platform_get_irq(struct rwnx_plat *rwnx_plat)
-{
-    return rwnx_plat->pci_dev->irq;
-}
 
 void rwnx_platform_custom_msg_vnet_init(void);
 void rwnx_platform_get_mac_ready(void);

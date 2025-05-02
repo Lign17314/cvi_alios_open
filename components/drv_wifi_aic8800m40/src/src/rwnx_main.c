@@ -30,12 +30,7 @@
 #include "rwnx_utils.h"
 #include "aicwf_txrxif.h"
 #include "aicwf_custom_utils.h"
-#ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
-#endif
-#ifdef AICWF_USB_SUPPORT
-#include "aicwf_usb.h"
-#endif
 
 #define RW_DRV_DESCRIPTION  "Driver for Linux"
 #define RW_DRV_COPYRIGHT    "Copyright(c) 2015-2017 RivieraWaves"
@@ -806,36 +801,12 @@ int nlaic_rx_rawdata(u8 *data, int len)
         }
         nla_put(skb, NLAIC_ATTR_RAWDATA, len, data);
         genlmsg_end(skb, hdr);
-        #if 1
         ret = genlmsg_unicast(nlaic_userid.net, skb, nlaic_userid.portid);
         #if (DBG_RX_RAWDATA_EN)
         if (ret == -EAGAIN) {
             dbg_eagain_cnt++;
             ret = 0;
         }
-        #endif
-        #else
-        do {
-            ret = genlmsg_unicast(nlaic_userid.net, skb, nlaic_userid.portid);
-            if (!ret) {
-                break;
-            } else if (ret == -EAGAIN) {
-                #if (DBG_RX_RAWDATA_EN)
-                if (retry_cnt == 0) {
-                    dbg_eagain_cnt++;
-                }
-                #endif
-                retry_cnt++;
-                if (retry_cnt > 4) {
-                    printk("retry %d times, giveup\n", retry_cnt);
-                    ret = 0;
-                    break;
-                }
-            } else {
-                printk("genlmsg_unicast failed, ret=%d\n", ret);
-                break;
-            }
-        } while (1);
         #endif
         #if (DBG_RX_RAWDATA_EN)
         dbg_rx_cnt++;
@@ -942,23 +913,6 @@ void rwnx_nlaic_deinit(void)
 }
 #endif
 
-/*********************************************************************
- * Init/Exit functions
- *********************************************************************/
-
-static void aicsmac_driver_register(void)
-{
-#ifdef AICWF_SDIO_SUPPORT
-    aicwf_sdio_register();
-#endif
-#ifdef AICWF_USB_SUPPORT
-    aicwf_usb_register();
-#endif
-#ifdef AICWF_PCIE_SUPPORT
-    aicwf_pcie_register();
-#endif
-}
-
 //static DECLARE_WORK(aicsmac_driver_work, aicsmac_driver_register);
 
 struct completion hostif_register_done;
@@ -978,47 +932,20 @@ static int __init rwnx_mod_init(void)
 
     init_completion(&hostif_register_done);
 
-    aicsmac_driver_register();
+    aicwf_sdio_register();
 
-#ifdef AICWF_SDIO_SUPPORT
     if ((wait_for_completion_timeout(&hostif_register_done, msecs_to_jiffies(REGISTRATION_TIMEOUT)) == 0)) {
         printk("register_driver timeout or error\n");
         aicwf_sdio_exit();
     return -ENODEV;
     }
-#endif /* AICWF_SDIO_SUPPORT */
-
-#ifdef AICWF_USB_SUPPORT
-    if ((wait_for_completion_timeout(&hostif_register_done, msecs_to_jiffies(REGISTRATION_TIMEOUT)) == 0)) {
-        printk("register_driver timeout or error\n");
-        aicwf_usb_exit();
-        return -ENODEV;
-    }
-#endif /*AICWF_USB_SUPPORT */
-
-
-#ifdef AICWF_PCIE_SUPPORT
-    return rwnx_platform_register_drv();
-#else
     return 0;
-#endif
 }
 
 static void __exit rwnx_mod_exit(void)
 {
     RWNX_DBG(RWNX_FN_ENTRY_STR);
-
-#ifdef AICWF_PCIE_SUPPORT
-    rwnx_platform_unregister_drv();
-#endif
-
-#ifdef AICWF_SDIO_SUPPORT
     aicwf_sdio_exit();
-#endif
-
-#ifdef AICWF_USB_SUPPORT
-    aicwf_usb_exit();
-#endif
 }
 
 module_init(rwnx_mod_init);

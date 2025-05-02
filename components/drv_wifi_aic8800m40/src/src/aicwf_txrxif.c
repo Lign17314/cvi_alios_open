@@ -20,9 +20,7 @@
 #include "rwnx_platform.h"
 #include "rwnx_defs.h"
 #include "rwnx_rx.h"
-#ifdef AICWF_SDIO_SUPPORT
 #include "sdio_host.h"
-#endif
 
 int aicwf_bus_init(uint bus_hdrlen, struct device *dev)
 {
@@ -44,15 +42,8 @@ int aicwf_bus_init(uint bus_hdrlen, struct device *dev)
 
     init_completion(&bus_if->bustx_trgg);
     init_completion(&bus_if->busrx_trgg);
-#ifdef AICWF_SDIO_SUPPORT
     bus_if->bustx_thread = kthread_run(sdio_bustx_thread, (void *)bus_if, "aicwf_bustx_thread");
     bus_if->busrx_thread = kthread_run(sdio_busrx_thread, (void *)bus_if->bus_priv.sdio->rx_priv, "aicwf_busrx_thread");
-#endif
-#ifdef AICWF_USB_SUPPORT
-    bus_if->bustx_thread = kthread_run(usb_bustx_thread, (void *)bus_if, "aicwf_bustx_thread");
-    bus_if->busrx_thread = kthread_run(usb_busrx_thread, (void *)bus_if->bus_priv.usb->rx_priv, "aicwf_busrx_thread");
-#endif
-
     if (IS_ERR(bus_if->bustx_thread)) {
         bus_if->bustx_thread  = NULL;
         txrx_err("aicwf_bustx_thread run fail\n");
@@ -75,14 +66,6 @@ fail:
 void aicwf_bus_deinit(struct device *dev)
 {
     struct aicwf_bus *bus_if;
-#if 0
-#ifdef AICWF_USB_SUPPORT
-    struct aic_usb_dev *usb;
-#endif
-#ifdef AICWF_SDIO_SUPPORT
-    struct aic_sdio_dev *sdiodev;
-#endif
-#endif
 
     if (!dev) {
         txrx_err("device not found\n");
@@ -91,19 +74,6 @@ void aicwf_bus_deinit(struct device *dev)
     printk("%s", __func__);
     bus_if = dev_get_drvdata(dev);
     aicwf_bus_stop(bus_if);
-
-#if 0
-#ifdef AICWF_USB_SUPPORT
-    usb =bus_if->bus_priv.usb;
-    if(g_rwnx_plat->enabled)
-        rwnx_platform_deinit(usb->rwnx_hw);
-#endif
-#ifdef AICWF_SDIO_SUPPORT
-    sdiodev =bus_if->bus_priv.sdio;
-    if(g_rwnx_plat->enabled)
-        rwnx_platform_deinit(sdiodev->rwnx_hw);
-#endif
-#endif
 
     if (bus_if->cmd_buf) {
         kfree(bus_if->cmd_buf);
@@ -121,7 +91,6 @@ void aicwf_bus_deinit(struct device *dev)
 int aicwf_frame_tx(void *dev, struct sk_buff *skb)
 {
     int ret;
-#ifdef AICWF_SDIO_SUPPORT
     struct aic_sdio_dev *sdiodev = (struct aic_sdio_dev *)dev;
     #ifdef CONFIG_TX_NETIF_FLOWCTRL
     unsigned long flags;
@@ -142,36 +111,12 @@ int aicwf_frame_tx(void *dev, struct sk_buff *skb)
         return -EPIPE;
     }
     ret = aicwf_bus_txdata(sdiodev->bus_if, skb);
-#else
-    struct aic_usb_dev *usbdev = (struct aic_usb_dev *)dev;
-    //printk("%s %d\r\n",  __func__, usbdev->state);
-
-    if (!usbdev->state) {
-        txrx_err("down\n");
-        #ifdef CONFIG_VNET_MODE
-        aicwf_usb_tx_flowctrl(vnet_dev, true);
-        #endif
-        dev_kfree_skb(skb);
-        return -EPIPE;
-    }
-    ret = aicwf_bus_txdata(usbdev->bus_if, skb);
-#endif
     return ret;
 }
 void aicwf_msg_tx(void *dev,  u8 *msg, uint len)
 {
-#ifdef AICWF_SDIO_SUPPORT
     struct aic_sdio_dev *sdiodev = (struct aic_sdio_dev *)dev;
     aicwf_bus_txmsg(sdiodev->bus_if, msg, len);
-#else
-    struct aic_usb_dev *usbdev = (struct aic_usb_dev *)dev;
-
-    if (!usbdev->state) {
-        txrx_err("down\n");
-        return;
-    }
-    aicwf_bus_txmsg(usbdev->bus_if, msg, len);
-#endif
 }
 
 struct aicwf_tx_priv* aicwf_tx_init(void *arg)
@@ -183,12 +128,7 @@ struct aicwf_tx_priv* aicwf_tx_init(void *arg)
     if (!tx_priv)
         return NULL;
 
-#ifdef AICWF_SDIO_SUPPORT
     tx_priv->sdiodev = (struct aic_sdio_dev *)arg;
-#else
-    tx_priv->usbdev = (struct aic_usb_dev *)arg;
-#endif
-
     atomic_set(&tx_priv->aggr_count, 0);
     tx_priv->aggr_buf = dev_alloc_skb(MAX_AGGR_TXPKT_LEN);
     if(!tx_priv->aggr_buf) {
@@ -210,7 +150,6 @@ void aicwf_tx_deinit(struct aicwf_tx_priv* tx_priv)
     kfree(tx_priv);
 }
 
-#ifdef AICWF_SDIO_SUPPORT
 static bool aicwf_next_ptk(struct sk_buff *skb)
 {
     u8 *data;
@@ -227,12 +166,10 @@ static bool aicwf_next_ptk(struct sk_buff *skb)
 
     return true;
 }
-#endif
 
 
 int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
 {
-#ifdef AICWF_SDIO_SUPPORT
     int ret = 0;
     unsigned long flags = 0;
     struct sk_buff *skb = NULL;
@@ -265,17 +202,6 @@ int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
             }
 
             if((skb->data[2] & SDIO_TYPE_CFG) != SDIO_TYPE_CFG) { // type : data
-                #if 0
-                struct sk_buff  *rx_skb = dev_alloc_skb(skb->len+2);
-                skb_reserve(rx_skb, 2); /* align IP on 16B boundary */
-                memcpy(skb_put(rx_skb, skb->len), (skb->data+4), (skb->len - 4));
-
-                /* Write metadata, and then pass to the receive level */
-                rx_skb->dev = vnet_dev;
-                rx_skb->protocol = eth_type_trans(rx_skb, vnet_dev);
-
-                netif_rx(rx_skb);
-                #else
                 aggr_len = (pkt_len + 4);
 
                 if (aggr_len & (RX_ALIGNMENT - 1))
@@ -295,8 +221,6 @@ int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
                 rwnx_rx_handle_data(rx_priv, rx_skb);
                 skb_pull(skb, adjust_len); // used by aggr
                 total_len -= adjust_len;
-
-                #endif
             }
             else { //  type : config
                 aggr_len = pkt_len;
@@ -333,93 +257,6 @@ int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
     #endif
 
     return ret;
-#else //AICWF_USB_SUPPORT
-    int ret = 0;
-    unsigned long flags = 0;
-    struct sk_buff *skb = NULL; /* Packet for event or data frames */
-    u16 pkt_len = 0;
-    u16 aggr_len = 0, adjust_len = 0;
-    u8 *data = NULL;
-    u8_l *msg = NULL;
-
-    while (1) {
-        spin_lock_irqsave(&rx_priv->rxqlock, flags);
-        if(aicwf_is_framequeue_empty(&rx_priv->rxq)) {
-            usb_info("no more rxdata\n");
-            spin_unlock_irqrestore(&rx_priv->rxqlock,flags);
-            break;
-        }
-        skb = aicwf_frame_dequeue(&rx_priv->rxq);
-        spin_unlock_irqrestore(&rx_priv->rxqlock, flags);
-        if (skb == NULL) {
-            txrx_err("skb_error\r\n");
-            break;
-        }
-        data = skb->data;
-        pkt_len = (*skb->data | (*(skb->data + 1) << 8));
-        //printk("p:%d, s:%d , %x\n", pkt_len, skb->len, data[2]);
-        if (pkt_len > 1700) {
-            dev_kfree_skb(skb);
-            atomic_dec(&rx_priv->rx_cnt);
-            continue;
-        }
-
-        if((skb->data[2] & USB_TYPE_CFG) != USB_TYPE_CFG) { // type : data
-            #if 0
-            struct sk_buff  *rx_skb = dev_alloc_skb(skb->len+2);
-            skb_reserve(rx_skb, 2); /* align IP on 16B boundary */
-            memcpy(skb_put(rx_skb, skb->len), (skb->data+4), (skb->len - 4));
-
-            /* Write metadata, and then pass to the receive level */
-            rx_skb->dev = vnet_dev;
-            rx_skb->protocol = eth_type_trans(rx_skb, vnet_dev);
-
-            netif_rx(rx_skb);
-            #else
-            struct sk_buff  *rx_skb = dev_alloc_skb(skb->len);
-            if (NULL ==  rx_skb) {
-                txrx_err("no more space! skip\n");
-                continue;
-            }
-            memcpy(skb_put(rx_skb, skb->len),  skb->data, skb->len);
-            skb_pull(rx_skb, 4);
-
-            // 802.11 packet
-            rwnx_rx_handle_data(rx_priv, rx_skb);
-            #endif
-        }
-        else { //  type : config
-            aggr_len = pkt_len;
-            if (aggr_len & (RX_ALIGNMENT - 1))
-                adjust_len = roundup(aggr_len, RX_ALIGNMENT);
-            else
-                adjust_len = aggr_len;
-
-            msg = kmalloc(aggr_len+4, GFP_KERNEL);
-            if(msg == NULL){
-                txrx_err("no more space for msg!\n");
-                        aicwf_dev_skb_free(skb);
-                return -EBADE;
-            }
-
-            #ifdef CONFIG_VNET_MODE
-            memcpy(msg, data, aggr_len + 4);
-            if((*(msg + 2) & 0x7f) == USB_TYPE_CFG_CMD_RSP)
-                rwnx_rx_handle_msg(rx_priv->usbdev, (struct ipc_e2a_msg *)(msg + 4));
-            #endif
-
-            skb_pull(skb, adjust_len+4);
-            kfree(msg);
-        }
-
-        dev_kfree_skb(skb);
-        atomic_dec(&rx_priv->rx_cnt);
-    }
-
-    return ret;
-#endif //AICWF_SDIO_SUPPORT
-return 0;
-
 }
 static struct recv_msdu *aicwf_rxframe_queue_init(struct list_head *q, int qsize)
 {
@@ -456,11 +293,7 @@ struct aicwf_rx_priv *aicwf_rx_init(void *arg)
     if (!rx_priv)
         return NULL;
 
-#ifdef AICWF_SDIO_SUPPORT
     rx_priv->sdiodev = (struct aic_sdio_dev *)arg;
-#else
-    rx_priv->usbdev = (struct aic_usb_dev *)arg;
-#endif
 
     aicwf_frame_queue_init(&rx_priv->rxq, 1, MAX_RXQLEN);
     spin_lock_init(&rx_priv->rxqlock);
@@ -484,33 +317,11 @@ struct aicwf_rx_priv *aicwf_rx_init(void *arg)
 
 void aicwf_rx_deinit(struct aicwf_rx_priv* rx_priv)
 {
-#if 0//def AICWF_RX_REORDER
-    struct reord_ctrl_info *reord_info, *tmp;
-
-    txrx_dbg("%s\n", __func__);
-
-    spin_lock_bh(&rx_priv->stas_reord_lock);
-    list_for_each_entry_safe(reord_info, tmp,
-        &rx_priv->stas_reord_list, list) {
-        reord_deinit_sta(rx_priv, reord_info);
-    }
-    spin_unlock_bh(&rx_priv->stas_reord_lock);
-#endif
-
-#ifdef AICWF_SDIO_SUPPORT
     if (rx_priv->sdiodev->bus_if->busrx_thread) {
         complete(&rx_priv->sdiodev->bus_if->busrx_trgg);
         kthread_stop(rx_priv->sdiodev->bus_if->busrx_thread);
         rx_priv->sdiodev->bus_if->busrx_thread = NULL;
     }
-#endif
-#ifdef AICWF_USB_SUPPORT
-    if (rx_priv->usbdev->bus_if->busrx_thread) {
-        complete(&rx_priv->usbdev->bus_if->busrx_trgg);
-        kthread_stop(rx_priv->usbdev->bus_if->busrx_thread);
-        rx_priv->usbdev->bus_if->busrx_thread = NULL;
-    }
-#endif
 
     aicwf_frame_queue_flush(&rx_priv->rxq);
 #ifdef AICWF_RX_REORDER
@@ -648,7 +459,6 @@ static struct sk_buff *aicwf_skb_dequeue_tail(struct frame_queue *pq, int prio)
 
 bool aicwf_frame_enq(struct device *dev, struct frame_queue *q, struct sk_buff *pkt, int prio)
 {
-#if 1
     struct sk_buff *p = NULL;
     int prio_modified = -1;
 
@@ -677,13 +487,6 @@ bool aicwf_frame_enq(struct device *dev, struct frame_queue *q, struct sk_buff *
     }
 
     return p != NULL;
-#else
-    if (q->queuelist[prio].qlen < q->qmax && q->qcnt < q->qmax) {
-        aicwf_frame_queue_penq(q, prio, pkt);
-        return true;
-    } else
-        return false;
-#endif
 }
 
 

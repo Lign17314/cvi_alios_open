@@ -9,7 +9,6 @@
 #ifndef _AICWF_SDMMC_H_
 #define _AICWF_SDMMC_H_
 
-#ifdef AICWF_SDIO_SUPPORT
 #include <linux/skbuff.h>
 #include <linux/if_ether.h>
 #include <linux/ieee80211.h>
@@ -167,6 +166,5 @@ extern void sdio_reinit(void);
 #endif /*CONFIG_PLATFORM_NANOPI*/
 uint8_t crc8_ponl_107(uint8_t *p_buffer, uint16_t cal_size);
 
-#endif /* AICWF_SDIO_SUPPORT */
 
 #endif /*_AICWF_SDMMC_H_*/

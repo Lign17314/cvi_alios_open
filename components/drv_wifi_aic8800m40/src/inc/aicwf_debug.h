@@ -36,21 +36,3 @@ do {	\
 
 
 
-#if 0
-#define RWNX_DBG(fmt, ...)	\
-	do {	\
-		if (aicwf_dbg_level & LOGTRACE) {	\
-			printk(AICWF_LOG"LOGTRACE"")\t" fmt, ##__VA_ARGS__); \
-		}	\
-	} while (0)
-#define AICWFDBG(args, level)	\
-do {	\
-	if (aicwf_dbg_level & level) {	\
-		printk(AICWF_LOG"(%s)\t" ,#level);	\
-		printf args;	\
-	}	\
-} while (0)
-#endif
-
-
-

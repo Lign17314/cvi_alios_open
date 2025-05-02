@@ -26,14 +26,8 @@
 #include "rwnx_utils.h"
 #include "rwnx_platform.h"
 
-#ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
 #include "sdio_host.h"
-#endif
-
-#ifdef AICWF_USB_SUPPORT
-#include "usb_host.h"
-#endif
 
 #define TERM_BUFFER_SIZE 4096
 
@@ -137,12 +131,7 @@ struct rwnx_hw {
     spinlock_t cb_lock;
 
     //struct device *dev;
-    #ifdef AICWF_SDIO_SUPPORT
     struct aic_sdio_dev *sdiodev;
-    #endif
-    #ifdef AICWF_USB_SUPPORT
-    struct aic_usb_dev *usbdev;
-    #endif
 
     struct rwnx_vif *vif_table[NX_VIRT_DEV_MAX + NX_REMOTE_STA_MAX]; /* indexed with fw id */
     struct rwnx_cmd_mgr *cmd_mgr;

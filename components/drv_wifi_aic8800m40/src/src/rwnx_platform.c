@@ -16,12 +16,7 @@
 #include "rwnx_tx.h"
 #include "virt_net.h"
 
-#ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
-#endif
-#ifdef AICWF_USB_SUPPORT
-#include "aicwf_usb.h"
-#endif
 
 struct rwnx_plat *g_rwnx_plat = NULL;
 struct rwnx_vif  g_rwnx_vif   = {{0}};
@@ -118,70 +113,6 @@ int rwnx_platform_get_vnet_setting(void)
 #endif
 
 /**
- * rwnx_platform_reset() - Reset the platform
- *
- * @rwnx_plat: platform data
- */
-static int rwnx_platform_reset(struct rwnx_plat *rwnx_plat)
-{
-    u32 regval;
-
-#if defined(AICWF_USB_SUPPORT) || defined(AICWF_SDIO_SUPPORT)
-    return 0;
-#endif
-
-    /* the doc states that SOFT implies FPGA_B_RESET
-     * adding FPGA_B_RESET is clearer */
-    RWNX_REG_WRITE(SOFT_RESET | FPGA_B_RESET, rwnx_plat,
-                   RWNX_ADDR_SYSTEM, SYSCTRL_MISC_CNTL_ADDR);
-    msleep(100);
-
-    regval = RWNX_REG_READ(rwnx_plat, RWNX_ADDR_SYSTEM, SYSCTRL_MISC_CNTL_ADDR);
-
-    if (regval & SOFT_RESET) {
-        dev_err(rwnx_platform_get_dev(rwnx_plat), "reset: failed\n");
-        return -EIO;
-    }
-
-    RWNX_REG_WRITE(regval & ~FPGA_B_RESET, rwnx_plat,
-                   RWNX_ADDR_SYSTEM, SYSCTRL_MISC_CNTL_ADDR);
-    msleep(100);
-    return 0;
-}
-
-/**
- * rwmx_platform_save_config() - Save hardware config before reload
- *
- * @rwnx_plat: Pointer to platform data
- *
- * Return configuration registers values.
- */
-static void* rwnx_term_save_config(struct rwnx_plat *rwnx_plat)
-{
-    const u32 *reg_list;
-    u32 *reg_value, *res;
-    int i, size = 0;
-
-    if (rwnx_plat->get_config_reg) {
-        size = rwnx_plat->get_config_reg(rwnx_plat, &reg_list);
-    }
-
-    if (size <= 0)
-        return NULL;
-
-    res = kmalloc(sizeof(u32) * size, GFP_KERNEL);
-    if (!res)
-        return NULL;
-
-    reg_value = res;
-    for (i = 0; i < size; i++) {
-        *reg_value++ = RWNX_REG_READ(rwnx_plat, RWNX_ADDR_SYSTEM, *reg_list++);
-    }
-
-    return res;
-}
-
-/**
  * rwnx_platform_on() - Start the platform
  *
  * @rwnx_hw: Main driver data
@@ -221,27 +152,8 @@ int rwnx_platform_on(struct rwnx_hw *rwnx_hw, void *config)
  */
 void rwnx_platform_off(struct rwnx_hw *rwnx_hw, void **config)
 {
-    #if defined(AICWF_USB_SUPPORT) || defined(AICWF_SDIO_SUPPORT)
     rwnx_hw->plat->enabled = false;
     return ;
-    #endif
-
-    if (!rwnx_hw->plat->enabled) {
-        if (config)
-            *config = NULL;
-        return;
-    }
-
-    if (config)
-        *config = rwnx_term_save_config(rwnx_hw->plat);
-
-    rwnx_hw->plat->disable(rwnx_hw);
-
-    tasklet_kill(&rwnx_hw->task);
-
-    rwnx_platform_reset(rwnx_hw->plat);
-
-    rwnx_hw->plat->enabled = false;
 }
 
 #ifdef CONFIG_APP_FASYNC
@@ -523,44 +435,12 @@ void rwnx_platform_deinit(void)
 
     // deinit netdevice
     virt_net_exit();
-
-    #ifdef AICWF_SDIO_SUPPORT
     // deinit fasync char device
     #ifdef CONFIG_APP_FASYNC
     rwnx_aic_cdev_driver_deinit();
-    #endif
     #endif
 
     #elif defined(CONFIG_RAWDATA_MODE)
     rwnx_nlaic_deinit();
     #endif
 }
-
-/**
- * rwnx_platform_register_drv() - Register all possible platform drivers
- */
-int rwnx_platform_register_drv(void)
-{
-    return 0;//rwnx_pci_register_drv();
-}
-
-
-/**
- * rwnx_platform_unregister_drv() - Unegister all platform drivers
- */
-void rwnx_platform_unregister_drv(void)
-{
-    //return rwnx_pci_unregister_drv();
-}
-
-struct device *rwnx_platform_get_dev(struct rwnx_plat *rwnx_plat)
-{
-#ifdef AICWF_SDIO_SUPPORT
-    return rwnx_plat->sdiodev->dev;
-#endif
-#ifdef AICWF_USB_SUPPORT
-    return rwnx_plat->usbdev->dev;
-#endif
-    return &(rwnx_plat->pci_dev->dev);
-}
-

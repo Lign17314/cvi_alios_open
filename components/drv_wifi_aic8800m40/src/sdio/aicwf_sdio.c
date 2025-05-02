@@ -21,15 +21,6 @@
 #include "sdio_host.h"
 #include "rwnx_defs.h"
 #include "rwnx_platform.h"
-#ifdef CONFIG_INGENIC_T31
-#include "mach/jzmmc.h"
-#elif defined CONFIG_INGENIC_T40
-#include "soc/mmc.h"
-#endif /* CONFIG_INGENIC_T31 */
-
-#ifdef CONFIG_PLATFORM_ALLWINNER
-void platform_wifi_power_off(void);
-#endif
 
 #ifdef CONFIG_TX_NETIF_FLOWCTRL
 int tx_fc_low_water = AICWF_SDIO_TX_LOW_WATER;
@@ -442,77 +433,8 @@ static struct sdio_driver aicwf_sdio_driver = {
     },
 };
 
-#ifdef CONFIG_NANOPI_M4
-    extern int mmc_rescan_try_freq(struct mmc_host *host, unsigned freq);
-    extern unsigned  aic_max_freqs;
-    extern struct mmc_host* aic_host_drv;
-    extern int __mmc_claim_host(struct mmc_host *host, atomic_t *abort);
-    extern void mmc_release_host(struct mmc_host *host);
-#endif
-#ifdef CONFIG_PLATFORM_ALLWINNER
-extern void sunxi_mmc_rescan_card(unsigned ids);
-extern void sunxi_wlan_set_power(int on);
-extern int sunxi_wlan_get_bus_index(void);
-
-int platform_wifi_power_on(void)
-{
-	int ret=0;
-	int wlan_bus_index=sunxi_wlan_get_bus_index();
-	if(wlan_bus_index < 0)
-		return wlan_bus_index;
-
-	sunxi_wlan_set_power(1);
-	mdelay(1000);
-	sunxi_mmc_rescan_card(wlan_bus_index);
-
-	printk("platform_wifi_power_on");
-
-	return ret;
-}
-
-void platform_wifi_power_off(void)
-{
-	int wlan_bus_index = sunxi_wlan_get_bus_index();
-    if(wlan_bus_index < 0) {
-		printk("no wlan_bus_index\n");
-		return ;
-	}
-	printk("power_off\n");
-	sunxi_wlan_set_power(0);
-    mdelay(100);
-    //sunxi_mmc_rescan_card(wlan_bus_index);
-
-    printk("platform_wifi_power_off");
-}
-#endif
 void aicwf_sdio_register(void)
 {
-#ifdef CONFIG_PLATFORM_NANOPI
-    extern_wifi_set_enable(0);
-    mdelay(200);
-    extern_wifi_set_enable(1);
-    mdelay(200);
-    sdio_reinit();
-#endif /*CONFIG_PLATFORM_NANOPI*/
-
-#ifdef CONFIG_INGENIC_T31
-    int ret = jzmmc_manual_detect(1, 1);
-    if (ret) {
-		printk("manual detect err %d\r\n", ret);
-	}
-#endif /* CONFIG_INGENIC_T31 */
-
-#ifdef CONFIG_NANOPI_M4
-    if(aic_host_drv->card == NULL){
-        __mmc_claim_host(aic_host_drv,NULL);
-        printk("aic: >>>mmc_rescan_try_freq\n");
-        mmc_rescan_try_freq(aic_host_drv,aic_max_freqs);
-        mmc_release_host(aic_host_drv);
-    }
-#endif
-#ifdef CONFIG_PLATFORM_ALLWINNER
-    platform_wifi_power_on();
-#endif
     if (sdio_register_driver(&aicwf_sdio_driver)) {
 		printk("aic>: sdio_register_driver fail\n");
     } else {
@@ -527,10 +449,6 @@ void aicwf_sdio_exit(void)
     }
 
     sdio_unregister_driver(&aicwf_sdio_driver);
-
-#ifdef CONFIG_PLATFORM_NANOPI
-    extern_wifi_set_enable(0);
-#endif /*CONFIG_PLATFORM_NANOPI*/
     kfree(g_rwnx_plat);
 }
 
@@ -673,13 +591,6 @@ int aicwf_sdio_txpkt(struct aic_sdio_dev *sdiodev, struct sk_buff *pkt)
     len = pkt->len;
     len = (len + SDIOWIFI_FUNC_BLOCKSIZE - 1) / SDIOWIFI_FUNC_BLOCKSIZE * SDIOWIFI_FUNC_BLOCKSIZE;
 
-	#if 0
-	printk("aicwf_sdio_txpkt %d\r\n", len);
-	u16 i;
-	for (i = 0; i< 64; i++)
-		printk("%02X ", pkt->data[i]);
-	printk("\r\n");
-	#endif
     ret = aicwf_sdio_send_pkt(sdiodev, pkt->data, len);
     if (ret)
         sdio_err("aicwf_sdio_send_pkt fail%d\n", ret);
@@ -965,22 +876,6 @@ static int aicwf_sdio_bus_txmsg(struct device *dev, u8 *msg, uint msglen)
     }
 
     complete(&bus_if->bustx_trgg);
-    #if 0
-    if (sdiodev->tx_priv->cmd_txstate) {
-        int timeout = msecs_to_jiffies(CMD_TX_TIMEOUT);
-        ret = wait_event_interruptible_timeout(sdiodev->tx_priv->cmd_txdone_wait, \
-                                            !(sdiodev->tx_priv->cmd_txstate), timeout);
-    }
-
-    if (!sdiodev->tx_priv->cmd_txstate && sdiodev->tx_priv->cmd_tx_succ) {
-        ret = 0;
-    } else {
-        sdio_err("send faild:%d, %d,%x\n", sdiodev->tx_priv->cmd_txstate, sdiodev->tx_priv->cmd_tx_succ, ret);
-        ret = -EIO;
-    }
-
-    return ret;
-    #endif
     return 0;
 }
 
@@ -1169,15 +1064,8 @@ static int aicwf_sdio_bus_start(struct device *dev)
     struct aicwf_bus *bus_if = dev_get_drvdata(dev);
     struct aic_sdio_dev *sdiodev = bus_if->bus_priv.sdio;
     int ret = 0;
-
-#if 1
     sdio_claim_host(sdiodev->func);
     sdio_claim_irq(sdiodev->func, aicwf_sdio_hal_irqhandler);
-#else
-    //since we have func2 we don't register irq handler
-    sdio_claim_irq(sdiodev->func, NULL);
-    sdiodev->func->irq_handler = (sdio_irq_handler_t *)aicwf_sdio_hal_irqhandler;
-#endif
 
     if (sdiodev->chipid == PRODUCT_ID_AIC8800M40) {
         sdio_f0_writeb(sdiodev->func, 0x07, 0x04, &ret);
@@ -1612,7 +1500,7 @@ int aicwf_sdio_func_init(struct aic_sdio_dev *sdiodev)
 
 int aicwf_sdiov3_func_init(struct aic_sdio_dev *sdiodev)
 {
-    u8 val = 0;
+    //u8 val = 0;
     int ret = 0;
     u8 val1 = 0;
     struct mmc_host *host;
@@ -1644,39 +1532,6 @@ int aicwf_sdiov3_func_init(struct aic_sdio_dev *sdiodev)
         sdio_release_host(sdiodev->func);
         return ret;
     }
-    #if 1
-    if (host->ios.timing == MMC_TIMING_UHS_DDR50) {
-        val = 0x21;//0x1D;//0x5;
-    } else {
-        val = 0x01;//0x19;//0x1;
-    }
-    val |= SDIOCLK_FREE_RUNNING_BIT;
-    sdio_f0_writeb(sdiodev->func, val, 0xF0, &ret);
-    if (ret) {
-        sdio_err("set iopad ctrl fail %d\n", ret);
-        sdio_release_host(sdiodev->func);
-        return ret;
-    }
-    sdio_f0_writeb(sdiodev->func, 0x0, 0xF8, &ret);
-    if (ret) {
-        sdio_err("set iopad delay2 fail %d\n", ret);
-        sdio_release_host(sdiodev->func);
-        return ret;
-    }
-    sdio_f0_writeb(sdiodev->func, 0x20, 0xF1, &ret);
-    if (ret) {
-        sdio_err("set iopad delay1 fail %d\n", ret);
-        sdio_release_host(sdiodev->func);
-        return ret;
-    }
-    msleep(1);
-    #if 1//SDIO CLOCK SETTING
-    if (host->ios.timing != MMC_TIMING_UHS_DDR50) {
-        host->ios.clock = SDIOWIFI_CLOCK_V3;
-        host->ops->set_ios(host, &host->ios);
-    }
-    #endif
-    #endif
     AICWFDBG(LOGINFO, "Set SDIO Clock %d MHz\n", host->ios.clock/1000000);
     sdio_release_host(sdiodev->func);
 
@@ -1770,9 +1625,7 @@ void *aicwf_sdio_bus_init(struct aic_sdio_dev *sdiodev)
     timer_setup(&sdiodev->timer, aicwf_sdio_bus_pwrctl, 0);
 #endif
     init_completion(&sdiodev->pwrctrl_trgg);
-#ifdef AICWF_SDIO_SUPPORT
     sdiodev->pwrctl_tsk = kthread_run(aicwf_sdio_pwrctl_thread, sdiodev, "aicwf_pwrctl");
-#endif
     if (IS_ERR(sdiodev->pwrctl_tsk)) {
         sdiodev->pwrctl_tsk = NULL;
     }

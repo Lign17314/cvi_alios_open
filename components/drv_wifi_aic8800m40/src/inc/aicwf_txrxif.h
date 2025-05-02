@@ -12,11 +12,7 @@
 #include <linux/skbuff.h>
 #include <linux/sched.h>
 #include "ipc_shared.h"
-#ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
-#else
-#include "aicwf_usb.h"
-#endif
 
 #define CMD_BUF_MAX                 1536
 #define TXPKT_BLOCKSIZE             512
@@ -93,7 +89,6 @@ struct aicwf_bus {
 };
 
 struct aicwf_tx_priv {
-#ifdef AICWF_SDIO_SUPPORT
     struct aic_sdio_dev *sdiodev;
     int fw_avail_bufcnt;
     //for cmd tx
@@ -109,10 +104,6 @@ struct aicwf_tx_priv {
     struct frame_queue txq;
     spinlock_t txqlock;
     struct semaphore txctl_sema;
-#endif
-#ifdef AICWF_USB_SUPPORT
-    struct aic_usb_dev *usbdev;
-#endif
     struct sk_buff *aggr_buf;
     atomic_t aggr_count;
     u8 *head;
@@ -159,13 +150,7 @@ struct recv_msdu {
 #endif
 
 struct aicwf_rx_priv {
-#ifdef AICWF_SDIO_SUPPORT
     struct aic_sdio_dev *sdiodev;
-#endif
-#ifdef AICWF_USB_SUPPORT
-    struct aic_usb_dev *usbdev;
-#endif
-
     void *rwnx_vif;
     atomic_t rx_cnt;
     u32 data_len;

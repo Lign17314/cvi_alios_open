@@ -804,11 +804,7 @@ struct reord_ctrl_info *reord_init_sta(struct aicwf_rx_priv* rx_priv, const u8 *
     u8 i = 0;
     struct reord_ctrl *preorder_ctrl = NULL;
     struct reord_ctrl_info *reord_info;
-#ifdef AICWF_SDIO_SUPPORT
     struct aicwf_bus *bus_if = rx_priv->sdiodev->bus_if;
-#else
-    struct aicwf_bus *bus_if = rx_priv->usbdev->bus_if;
-#endif
 
     if (bus_if->state == BUS_DOWN_ST || rx_priv == NULL) {
         printk("bad stat!\n");

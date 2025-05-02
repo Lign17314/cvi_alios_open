@@ -15,9 +15,7 @@
 #include "rwnx_tx.h"
 #include "rwnx_main.h"
 #include "aicwf_txrxif.h"
-#ifdef AICWF_SDIO_SUPPORT
 #include "aicwf_sdio.h"
-#endif
 
 #ifdef CONFIG_VNET_MODE
 extern aicwf_cmd_mgr g_cmd_mgr;
@@ -32,13 +30,7 @@ netdev_tx_t rwnx_start_xmit(struct sk_buff *skb, struct net_device *dev)
         aicwf_dev_skb_free(skb);
         return NETDEV_TX_OK;
     }
-    #ifdef AICWF_USB_SUPPORT
-    ret = aicwf_frame_tx((void *)(g_rwnx_plat->usbdev), skb);
-    #endif
-
-    #ifdef AICWF_SDIO_SUPPORT
     ret = aicwf_frame_tx((void *)(g_rwnx_plat->sdiodev), skb);
-    #endif
 
     if (ret) {
         txrx_err("frame_tx ret=%d\n", ret);
@@ -52,14 +44,7 @@ netdev_tx_t rwnx_start_xmit(struct sk_buff *skb, struct net_device *dev)
 int rwnx_tx_data(struct sk_buff *skb)
 {
     int ret;
-    #ifdef AICWF_USB_SUPPORT
-    ret = aicwf_frame_tx((void *)(g_rwnx_plat->usbdev), skb);
-    #endif
-
-    #ifdef AICWF_SDIO_SUPPORT
     ret = aicwf_frame_tx((void *)(g_rwnx_plat->sdiodev), skb);
-    #endif
-
     return ret;
 }
 #endif
@@ -77,7 +62,6 @@ void rwnx_tx_msg_send(u8 * msg,  u16 msg_len, int waitcfm)
         return;
     }
 
-    #ifdef AICWF_SDIO_SUPPORT
     p_dev = g_rwnx_plat->sdiodev;
     bus   = g_rwnx_plat->sdiodev->bus_if;
     type  = SDIO_TYPE_CFG;
@@ -85,12 +69,6 @@ void rwnx_tx_msg_send(u8 * msg,  u16 msg_len, int waitcfm)
         while(g_rwnx_plat->sdiodev->tx_priv->cmd_txstate == true)
             msleep(10);
     }
-    #endif
-    #ifdef AICWF_USB_SUPPORT
-    p_dev = g_rwnx_plat->usbdev;
-    bus   = g_rwnx_plat->usbdev->bus_if;
-    type  = USB_TYPE_CFG;
-    #endif
 
     buf = bus->cmd_buf;
     memset(buf, 0, CMD_BUF_MAX);
@@ -98,11 +76,9 @@ void rwnx_tx_msg_send(u8 * msg,  u16 msg_len, int waitcfm)
     p_host_data = (host_data_t *)(buf);
     p_host_data->plen  = (msg_len + 4);
     p_host_data->ptype = type;
-    #ifdef AICWF_SDIO_SUPPORT
     if (g_rwnx_plat->sdiodev->chipid == PRODUCT_ID_AIC8800M40) {
         p_host_data->reserved = crc8_ponl_107(&buf[0], 3); // crc8
     }
-    #endif
 
     memcpy((buf + HOST_DATA_HDR_LEN), msg, msg_len);
     aicwf_msg_tx(p_dev, buf, (msg_len + 8));
