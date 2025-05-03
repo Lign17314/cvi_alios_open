@@ -9,10 +9,10 @@
 #ifndef _AICWF_SDMMC_H_
 #define _AICWF_SDMMC_H_
 
-#include <linux/skbuff.h>
-#include <linux/if_ether.h>
-#include <linux/ieee80211.h>
-#include <linux/semaphore.h>
+// #include <linux/skbuff.h>
+// #include <linux/if_ether.h>
+// #include <linux/ieee80211.h>
+// #include <linux/semaphore.h>
 
 #define AICWF_SDIO_NAME                     "aicwf_sdio"
 #define SDIOWIFI_FUNC_BLOCKSIZE             512
@@ -90,18 +90,18 @@ enum AICWF_IC{
 struct rwnx_hw;
 
 struct aic_sdio_reg {
-    u8 bytemode_len_reg;
-    u8 intr_config_reg;
-    u8 sleep_reg;
-    u8 wakeup_reg;
-    u8 flow_ctrl_reg;
-    u8 flowctrl_mask_reg;
-    u8 register_block;
-    u8 bytemode_enable_reg;
-    u8 block_cnt_reg;
-    u8 misc_int_status_reg;
-    u8 rd_fifo_addr;
-    u8 wr_fifo_addr;
+    uint8_t bytemode_len_reg;
+    uint8_t intr_config_reg;
+    uint8_t sleep_reg;
+    uint8_t wakeup_reg;
+    uint8_t flow_ctrl_reg;
+    uint8_t flowctrl_mask_reg;
+    uint8_t register_block;
+    uint8_t bytemode_enable_reg;
+    uint8_t block_cnt_reg;
+    uint8_t misc_int_status_reg;
+    uint8_t rd_fifo_addr;
+    uint8_t wr_fifo_addr;
 };
 
 struct aic_sdio_dev {
@@ -114,7 +114,7 @@ struct aic_sdio_dev {
     struct aicwf_tx_priv *tx_priv;
     u32 state;
 #ifdef CONFIG_TX_NETIF_FLOWCTRL
-    u8 flowctrl;
+    uint8_t flowctrl;
     spinlock_t tx_flow_lock;
 #endif
 
@@ -131,7 +131,7 @@ struct aic_sdio_dev {
     u16 chipid;
     struct aic_sdio_reg sdio_reg;
 };
-int aicwf_sdio_writeb(struct aic_sdio_dev *sdiodev, uint regaddr, u8 val);
+int aicwf_sdio_writeb(struct aic_sdio_dev *sdiodev, uint regaddr, uint8_t val);
 void aicwf_sdio_hal_irqhandler(struct sdio_func *func);
 #if defined(CONFIG_SDIO_PWRCTRL)
 void aicwf_sdio_pwrctl_timer(struct aic_sdio_dev *sdiodev, uint duration);
@@ -147,7 +147,7 @@ void aicwf_sdio_tx_netif_flowctrl(struct net_device *ndev, bool state);
 int aicwf_sdio_flow_ctrl(struct aic_sdio_dev *sdiodev);
 int aicwf_sdio_flow_ctrl_msg(struct aic_sdio_dev *sdiodev);
 int aicwf_sdio_recv_pkt(struct aic_sdio_dev *sdiodev, struct sk_buff *skbbuf, u32 size);
-int aicwf_sdio_send_pkt(struct aic_sdio_dev *sdiodev, u8 *buf, uint count);
+int aicwf_sdio_send_pkt(struct aic_sdio_dev *sdiodev, uint8_t *buf, uint count);
 void *aicwf_sdio_bus_init(struct aic_sdio_dev *sdiodev);
 void aicwf_sdio_release(struct aic_sdio_dev *sdiodev);
 void aicwf_sdio_exit(void);
@@ -156,7 +156,7 @@ int aicwf_sdio_txpkt(struct aic_sdio_dev *sdiodev, struct sk_buff *pkt);
 int sdio_bustx_thread(void *data);
 int sdio_busrx_thread(void *data);
 int aicwf_sdio_aggr(struct aicwf_tx_priv *tx_priv, struct sk_buff *pkt);
-int aicwf_sdio_send(struct aicwf_tx_priv *tx_priv, u8 txnow);
+int aicwf_sdio_send(struct aicwf_tx_priv *tx_priv, uint8_t txnow);
 void aicwf_sdio_aggr_send(struct aicwf_tx_priv *tx_priv);
 void aicwf_sdio_aggrbuf_reset(struct aicwf_tx_priv* tx_priv);
 extern void aicwf_hostif_ready(void);

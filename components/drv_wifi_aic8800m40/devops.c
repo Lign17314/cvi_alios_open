@@ -4,7 +4,7 @@
 #include <sdio.h>
 #include <soc.h>
 
-#include "src/sdio_func.h"
+// #include "src/sdio_func.h"
 
 #define DEBUG_SDIO 0
 #define CONFIG_SDC_ID 1
