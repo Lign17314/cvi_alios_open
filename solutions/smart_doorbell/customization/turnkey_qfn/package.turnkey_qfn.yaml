@@ -19,6 +19,7 @@ hw_info:
 #   - minilibc: v7.2.0
 #   - aos: >=v7.2.0
 depends:
+  - drv_wifi_aic8800m40: develop
   - rhino: develop
   - rhino_arch: develop
   - aos: develop
@@ -48,12 +49,12 @@ depends:
   - cv181xc_qfn: v0.0.1
   - chip_cv181x: v0.0.1
   - cvi_kernel: v0.0.1
-  - cvi_runtime: v0.0.1
-  - cvi_math: v0.0.1
-  - cvi_tdl: v0.0.1
+  # - cvi_runtime: v0.0.1
+  # - cvi_math: v0.0.1
+  # - cvi_tdl: v0.0.1
   - minialsa: v7.5.1
   - drv_snd_cv181x: v7.5.1
-  - lvgl: develop
+  # - lvgl: develop
   - cvi_sensor: develop
   - rtsp: develop
   - cherryusb: develop
@@ -63,7 +64,7 @@ depends:
   - cvi_test: develop
   - fw_h26x: v0.0.1
   - cjson: develop
-  - drv_wifi_hi3861l: develop
+  # - drv_wifi_hi3861l: develop
   - cvi_mmf_sdk_cv181xx: develop
 ## 第三部分：板级信息
 # hw_info:                                 # 对 solution、board、chip 三个字段的改进，统称为 hw_info 字段
@@ -198,7 +199,7 @@ def_config:
   CONFIG_SUPPORT_TPU: 0
   CONFIG_APP_ETHERNET_SUPPORT: 0
   CONFIG_APP_WIFI_SUPPORT: 1
-  CONFIG_APP_HI3861_WIFI_SUPPORT: 1
+  CONFIG_APP_HI3861_WIFI_SUPPORT: 0
   CONFIG_APP_RTL8723DS_WIFI_SUPPORT: 0
   CONFIG_RTSP_SUPPORT_UDP: 0
   CONFIG_APP_RTSP_SUPPORT: 0

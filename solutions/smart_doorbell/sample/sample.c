@@ -8,6 +8,7 @@
 #include "aos/cli.h"
 #include <aos/kernel.h>
 #include "vfs.h"
+#if 0
 #include "core/utils/vpss_helper.h"
 #include "cvi_ive.h"
 #include "cvi_ive_interface.h"
@@ -284,7 +285,7 @@ void app_frame(int argc, char *argv[])
 }
 
 ALIOS_CLI_CMD_REGISTER(app_frame, app_frame, cvi_tdl app_frame yolov10);
-
+#endif
 //  app /mnt/sd/app.cvimodel /mnt/sd/a.rgb
 
 #include "wifi_if.h"

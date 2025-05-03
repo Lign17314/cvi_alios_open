@@ -155,8 +155,10 @@ int main(int argc, char* argv[])
     isp_daemon2_init(5566);
     cvi_raw_dump_init();
 #endif
-    LOGI(TAG, "app start........\n");
+    LOGI(TAG, "app start........ 1111\n");
     APP_CustomEventStart();
+    extern int app_wifi_init(void);
+    app_wifi_init();
 #ifdef CONFIG_DUMP_RECORD_TIME
     aos_msleep(300);
     csi_uart_set_output_stat(1);
